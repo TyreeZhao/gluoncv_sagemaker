@@ -1,1 +1,2 @@
 gluoncv
+scikit-image==0.16.2

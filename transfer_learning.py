@@ -17,6 +17,10 @@ from gluoncv.utils import makedirs
 from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.presets.imagenet import transform_eval
 
+import base64
+import skimage.io
+from io import BytesIO
+
 
 def test(net, val_data, ctx):
     metric = mx.metric.Accuracy()
@@ -104,7 +108,7 @@ def train(args):
                             'learning_rate': lr, 'momentum': momentum, 'wd': wd})
     metric = mx.metric.Accuracy()
     L = gluon.loss.SoftmaxCrossEntropyLoss()
-
+    
     lr_counter = 0
     num_batch = len(train_data)
 
@@ -145,24 +149,24 @@ def train(args):
     print('[Finished] Test-acc: %.3f' % (test_acc))
 
     finetune_net.save_parameters(os.path.join(args.model_dir, 'model-0000.params'))
-
+    
     os.makedirs(os.path.join(args.model_dir, 'code'))
     shutil.copy('/opt/ml/code/transfer_learning.py', os.path.join(args.model_dir, 'code'))
 #     shutil.copy('/opt/ml/code/requirements.txt', args.model_dir)
     with open(os.path.join(args.model_dir, 'code', 'requirements.txt'), 'w') as fout:
         fout.write('gluoncv\n')
 
-
+    
 def get_embedding_advance(input_pic, seq_net, use_layer):
     # Load Images
-    img = image.imread(input_pic)
-    # img = input_pic
-
+#     img = image.imread(input_pic)
+    img = input_pic
+    
     ctx = [mx.cpu()]
 
     # Transform
     img = transform_eval(img).copyto(ctx[0])
-
+    
     pred = None
     for i in range(len(seq_net)):
         img = seq_net[i](img)
@@ -173,13 +177,13 @@ def get_embedding_advance(input_pic, seq_net, use_layer):
 
     return pred.asnumpy()
 
-
+    
 def model_fn(model_dir):
     classes = 1000
     model_name = 'ResNet50_v2'
-
+    
     ctx = [mx.cpu()]
-
+    
     saved_params = os.path.join(model_dir, 'model-0000.params')
     if not os.path.exists(saved_params):
         saved_params = ''
@@ -200,25 +204,30 @@ def model_fn(model_dir):
     for i in range(len(net.features)):
         seq_net.add(net.features[i])
 
+#     print('[DEBUG] model loaded')
+        
     return seq_net
 
 
 def input_fn(request_body, request_content_type):
 #     print('[DEBUG] request_body:', type(request_body))
-#     print('[DEBUG] request_content_type:', request_content_type)
-
+    print('[DEBUG] request_content_type:', request_content_type)
+    
     """An input_fn that loads a pickled tensor"""
     if request_content_type == 'application/x-npy':
-        from io import BytesIO
         np_bytes = BytesIO(request_body)
         return mx.ndarray.array(np.load(np_bytes, allow_pickle=True))
     elif request_content_type == 'application/json':
         data = json.loads(request_body)
         return mx.ndarray.array(data)
+    elif request_content_type == 'application/string':
+        data = base64.b64decode(request_body)
+        image = skimage.io.imread(data, plugin='imageio')
+        return mx.ndarray.array(image)
     else:
         # Handle other content-types here or raise an Exception
-        # if the content type is not supported.
-        return request_body
+        # if the content type is not supported.  
+        pass
     return request_body
 
 
@@ -237,10 +246,10 @@ def output_fn(prediction, content_type):
 #     print('[DEBUG] content_type:', content_type)
     return prediction
 
-
+    
 def parse_args():
     parser = argparse.ArgumentParser()
-
+    
     parser.add_argument("--classes", type=int, default=10)
 
     parser.add_argument("--batch-size", type=int, default=100)
@@ -264,11 +273,24 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    args = parse_args()
-
-    train(args)
-
-#     model_dir = '/opt/ml/model'
-#     input_data = mx.ndarray.array(np.zeros(shape=(512, 512, 3)))
-#     model = model_fn(model_dir)
-#     result = predict_fn(input_data, model)
+#     args = parse_args()
+#     train(args)
+    
+    model_dir = '../'
+    model = model_fn(model_dir)
+    
+    
+    image = np.zeros(shape=(512, 512, 3))
+#     input_data = input_fn(image, 'application/x-npy')  # bug
+    input_data = mx.ndarray.array(image)
+    
+    result = predict_fn(input_data, model)
+    print(result)
+    
+    
+    image = open('../../20201214101050_a470b728-3df4-11eb-981d-0691580ff4aa_0.jpg', 'rb').read()
+    image = base64.b64encode(image).decode("utf-8")
+    input_data = input_fn(image, 'application/string')
+    
+    result = predict_fn(input_data, model)
+    print(result)

@@ -1,2 +1,4 @@
+-i https://opentuna.cn/pypi/web/simple/
+
 gluoncv
 scikit-image==0.16.2

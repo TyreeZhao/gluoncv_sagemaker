@@ -273,24 +273,25 @@ def parse_args():
 
 
 if __name__ == "__main__":
-#     args = parse_args()
-#     train(args)
-    
-    model_dir = '../'
-    model = model_fn(model_dir)
-    
-    
-    image = np.zeros(shape=(512, 512, 3))
+    args = parse_args()
+    train(args)
+    print("success")
+
+#     model_dir = '../'
+#     model = model_fn(model_dir)
+
+
+#     image = np.zeros(shape=(512, 512, 3))
 #     input_data = input_fn(image, 'application/x-npy')  # bug
-    input_data = mx.ndarray.array(image)
-    
-    result = predict_fn(input_data, model)
-    print(result)
-    print("success!!")
-    
-    # image = open('../../20201214101050_a470b728-3df4-11eb-981d-0691580ff4aa_0.jpg', 'rb').read()
-    # image = base64.b64encode(image).decode("utf-8")
-    # input_data = input_fn(image, 'application/string')
-    
-    # result = predict_fn(input_data, model)
-    # print(result)
+#     input_data = mx.ndarray.array(image)
+
+#     result = predict_fn(input_data, model)
+#     print(result)
+
+
+#     image = open('../../20201214101050_a470b728-3df4-11eb-981d-0691580ff4aa_0.jpg', 'rb').read()
+#     image = base64.b64encode(image).decode("utf-8")
+#     input_data = input_fn(image, 'application/string')
+
+#     result = predict_fn(input_data, model)
+#     print(result)

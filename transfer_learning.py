@@ -286,11 +286,11 @@ if __name__ == "__main__":
     
     result = predict_fn(input_data, model)
     print(result)
+    print("success!!")
     
+    # image = open('../../20201214101050_a470b728-3df4-11eb-981d-0691580ff4aa_0.jpg', 'rb').read()
+    # image = base64.b64encode(image).decode("utf-8")
+    # input_data = input_fn(image, 'application/string')
     
-    image = open('../../20201214101050_a470b728-3df4-11eb-981d-0691580ff4aa_0.jpg', 'rb').read()
-    image = base64.b64encode(image).decode("utf-8")
-    input_data = input_fn(image, 'application/string')
-    
-    result = predict_fn(input_data, model)
-    print(result)
+    # result = predict_fn(input_data, model)
+    # print(result)
